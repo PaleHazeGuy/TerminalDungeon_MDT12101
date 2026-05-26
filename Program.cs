@@ -2,61 +2,42 @@ using System;
 
 namespace TerminalDungeon
 {
-  public class TestHero : Hero
+  public class Warrior : Hero
   {
-    private int _mp;
-    public int MaxMP { get; private set; }
-
-    public int MP
+    public Warrior(string name) : base(name, 120, 15, 40)
     {
-      get => _mp;
-      set => _mp = Math.Clamp(value, 0, MaxMP);
     }
 
-    public TestHero(string name, int maxHp, int atk) : base(name, maxHp, atk)
+    public override string UseSkill(Character target)
     {
-      MaxMP = 40;
-      MP = 20;
-    }
-
-    public override void UseSkill(Character target)
-    {
-      int mpCost = 15;
-      if (MP >= mpCost)
+      if (MP >= 15)
       {
-        MP -= mpCost;
-        int skillDamage = ATK * 2;
-        Console.WriteLine($"\n[Skill] {Name} casts a heavy strike! (Used {mpCost} MP)");
-        target.HP -= skillDamage;
-        Console.WriteLine($"{target.Name} took {skillDamage} damage!");
+        MP -= 15;
+        int damage = ATK * 2;
+        target.HP -= damage;
+        return $"{Name} unleashes a Shield Slam! Dealt {damage} skill damage.";
       }
+      return $"{Name} tried to use Shield Slam, but didn't have enough MP!";
     }
   }
 
-  public class TestEnemy : Character
+  public class Enemy : Character
   {
-    private int _mp;
-    public int MaxMP { get; private set; }
+    private readonly Random _rng = new Random();
+    public int RewardEXP { get; private set; }
 
-    public int MP
+    public Enemy(string name, int hp, int atk, int maxMp, int rewardExp) : base(name, hp, atk, maxMp)
     {
-      get => _mp;
-      set => _mp = Math.Clamp(value, 0, MaxMP);
+      RewardEXP = rewardExp;
     }
 
-    private Random _rng = new Random();
-
-    public TestEnemy(string name, int hp, int atk) : base(name, hp, atk)
+    public override string Attack(Character target)
     {
-      MaxMP = 30;
-      MP = 10;
+      target.HP -= ATK;
+      return $"{Name} strikes {target.Name} for {ATK} damage.";
     }
 
-    public override void Attack(Character target)
-    {
-    }
-
-    public void TakeTurn(Character target, bool isTargetBlocking, out bool isEnemyBlocking)
+    public string TakeTurn(Character target, bool isTargetBlocking, out bool isEnemyBlocking)
     {
       isEnemyBlocking = false;
       int choice = _rng.Next(1, 4);
@@ -68,66 +49,67 @@ namespace TerminalDungeon
 
       if (choice == 1)
       {
-        int damage = this.ATK;
+        int damage = ATK;
         if (isTargetBlocking)
         {
-          damage = (int)(this.ATK * 0.3);
-          Console.WriteLine($"\n[Enemy Turn] {Name} lunges forward, but {target.Name} blocks the hit!");
-        }
-        else
-        {
-          Console.WriteLine($"\n[Enemy Turn] {Name} lunges forward with a basic attack!");
+          damage = (int)(ATK * 0.3);
+          target.HP -= damage;
+          return $"{Name} lunges forward, but you blocked the hit, taking only {damage} damage.";
         }
         target.HP -= damage;
-        Console.WriteLine($"{target.Name} took {damage} damage!");
+        return $"{Name} lunges forward with a basic attack dealing {damage} damage.";
       }
       else if (choice == 2)
       {
         MP -= 10;
-        int damage = this.ATK + 12;
+        int damage = ATK + 12;
         if (isTargetBlocking)
         {
           damage = (int)(damage * 0.3);
-          Console.WriteLine($"\n[Enemy Turn] {Name} unleashes a Dark Blast! {target.Name} mitigates the impact!");
-        }
-        else
-        {
-          Console.WriteLine($"\n[Enemy Turn] {Name} unleashes a powerful Dark Blast! (Used 10 MP)");
+          target.HP -= damage;
+          return $"{Name} unleashes a Dark Blast! You mitigated the impact, taking {damage} damage.";
         }
         target.HP -= damage;
-        Console.WriteLine($"{target.Name} took {damage} skill damage!");
+        return $"{Name} unleashes a powerful Dark Blast for {damage} damage!";
       }
-      else if (choice == 3)
+      else
       {
         isEnemyBlocking = true;
         MP += 10;
-        Console.WriteLine($"\n[Enemy Turn] {Name} takes a defensive stance and channels energy! (+10 Enemy MP)");
+        return $"{Name} takes a defensive stance and channels energy (+10 Enemy MP).";
       }
     }
   }
 
   class Program
   {
+    static void RenderUI(Warrior player, Enemy enemy, string combatLog)
+    {
+      Console.Clear();
+      Console.WriteLine("========================================");
+      Console.WriteLine("            TERMINAL DUNGEON            ");
+      Console.WriteLine("========================================");
+      Console.WriteLine($"[PLAYER] {player.Name} (Lv.{player.Level}) - HP: {player.HP}/{player.MaxHP} | MP: {player.MP}/{player.MaxMP}");
+      Console.WriteLine($"[ENEMY]  {enemy.Name} - HP: {enemy.HP}/{enemy.MaxHP} | MP: {enemy.MP}/{enemy.MaxMP}");
+      Console.WriteLine("----------------------------------------");
+      Console.WriteLine($"[LAST TURN]: {combatLog}");
+      Console.WriteLine("----------------------------------------");
+    }
+
     static void Main(string[] args)
     {
-      TestHero player = new TestHero("Player_Alpha", 120, 15);
-      TestEnemy enemy = new TestEnemy("Dungeon Guardian", 100, 20);
+      Warrior player = new Warrior("Player_Alpha");
+      Enemy enemy = new Enemy("Dungeon Guardian", 100, 20, 30, 120);
 
-      string combatLog = $"Battle Started! You encounter a {enemy.Name}.";
+      player.Inventory.Add(new Potion("Health Potion", "Restores 50 HP.", 50, 0));
+      player.Inventory.Add(new Potion("Mana Potion", "Restores 25 MP.", 0, 25));
+      player.Inventory.Add(new Potion("Rejuvenation Elixir", "Restores 30 HP and 15 MP.", 30, 15));
+
+      string combatLog = $"Battle Started! A hostile {enemy.Name} blocks your path.";
 
       while (player.IsAlive && enemy.IsAlive)
       {
-        Console.Clear();
-
-        Console.WriteLine("========================================");
-        Console.WriteLine("         TERMINAL DUNGEON TEST          ");
-        Console.WriteLine("========================================");
-        Console.WriteLine($"[PLAYER] {player.Name} - HP: {player.HP}/{player.MaxHP} | MP: {player.MP}/{player.MaxMP}");
-        Console.WriteLine($"[ENEMY]  {enemy.Name} - HP: {enemy.HP}/{enemy.MaxHP} | MP: {enemy.MP}/{enemy.MaxMP}");
-        Console.WriteLine("----------------------------------------");
-
-        Console.WriteLine($"[LAST TURN]: {combatLog}");
-        Console.WriteLine("----------------------------------------");
+        RenderUI(player, enemy, combatLog);
 
         bool validAction = false;
         bool isPlayerBlocking = false;
@@ -138,69 +120,115 @@ namespace TerminalDungeon
           Console.WriteLine("1. Attack");
           Console.WriteLine("2. Use Skill (Costs 15 MP)");
           Console.WriteLine("3. Block (Reduce damage & Regen 5 MP)");
+          Console.WriteLine("4. Open Inventory");
           Console.Write("> ");
 
           string input = Console.ReadLine();
 
           if (input == "1")
           {
-            Console.Clear();
-            player.Attack(enemy);
-            combatLog = $"{player.Name} dealt {player.ATK} damage to {enemy.Name}.";
+            combatLog = player.Attack(enemy);
             validAction = true;
           }
           else if (input == "2")
           {
             if (player.MP >= 15)
             {
-              Console.Clear();
-              player.UseSkill(enemy);
-              combatLog = $"{player.Name} used Heavy Strike on {enemy.Name}.";
+              combatLog = player.UseSkill(enemy);
               validAction = true;
             }
             else
             {
-              Console.WriteLine("Not enough MP! Choose another action.");
+              // Clear and repaint after telling the player they are out of MP
+              Console.WriteLine("Not enough MP! Press any key to refresh...");
+              Console.ReadKey(true);
+              RenderUI(player, enemy, combatLog);
             }
           }
           else if (input == "3")
           {
-            Console.Clear();
             isPlayerBlocking = true;
             player.MP += 5;
-            Console.WriteLine($"\n[Action] {player.Name} raises their guard! (+5 MP)");
-            combatLog = $"{player.Name} chose to Block.";
+            combatLog = $"{player.Name} raised their guard and gathered energy (+5 MP).";
             validAction = true;
+          }
+          else if (input == "4")
+          {
+            if (player.Inventory.Count == 0)
+            {
+              Console.WriteLine("Your inventory is empty! Press any key to continue... ");
+              Console.ReadKey(true);
+              RenderUI(player, enemy, combatLog);
+            }
+            else
+            {
+              Console.Clear();
+              Console.WriteLine("========================================");
+              Console.WriteLine("               INVENTORY                ");
+              Console.WriteLine("========================================");
+              for (int i = 0; i < player.Inventory.Count; i++)
+              {
+                Console.WriteLine($"{i + 1}. {player.Inventory[i].Name} - {player.Inventory[i].Description}");
+              }
+              Console.WriteLine("----------------------------------------");
+              Console.Write("Choose an item number to use (or 0 to go back): ");
+
+              if (int.TryParse(Console.ReadLine(), out int inventoryChoice))
+              {
+                if (inventoryChoice == 0)
+                {
+                  RenderUI(player, enemy, combatLog);
+                }
+                else if (inventoryChoice > 0 && inventoryChoice <= player.Inventory.Count)
+                {
+                  combatLog = player.UseItem(inventoryChoice - 1);
+                  validAction = true;
+                }
+                else
+                {
+                  Console.WriteLine("Invalid item slot selected. Press any key to return...");
+                  Console.ReadKey(true);
+                  RenderUI(player, enemy, combatLog);
+                }
+              }
+              else
+              {
+                Console.WriteLine("Invalid input. Press any key to return...");
+                Console.ReadKey(true);
+                RenderUI(player, enemy, combatLog);
+              }
+            }
           }
           else
           {
-            Console.WriteLine("Invalid choice. Please type 1, 2, or 3.");
+            Console.WriteLine("Invalid choice! Press any key to refresh...");
+            Console.ReadKey(true);
+            RenderUI(player, enemy, combatLog);
           }
         }
 
         if (!enemy.IsAlive)
         {
+          RenderUI(player, enemy, combatLog);
           Console.WriteLine($"\nVictory! {enemy.Name} has been defeated!");
+          Console.WriteLine(player.GainEXP(enemy.RewardEXP));
           break;
         }
 
-        System.Threading.Thread.Sleep(1500);
-
         bool isEnemyBlocking;
-        enemy.TakeTurn(player, isPlayerBlocking, out isEnemyBlocking);
-
-        if (isEnemyBlocking)
-          combatLog += $" Enemy shielded up and recharged.";
-        else
-          combatLog += $" Enemy counter-attacked!";
+        string enemyResponse = enemy.TakeTurn(player, isPlayerBlocking, out isEnemyBlocking);
+        combatLog += $" | {enemyResponse}";
 
         if (!player.IsAlive)
         {
+          RenderUI(player, enemy, combatLog);
           Console.WriteLine($"\nGame Over... {player.Name} was defeated.");
           break;
         }
 
-        System.Threading.Thread.Sleep(2500);
+        RenderUI(player, enemy, combatLog);
+        Console.WriteLine("\nPress any key to proceed to the next turn...");
+        Console.ReadKey(true);
       }
 
       Console.WriteLine("\n========================================");

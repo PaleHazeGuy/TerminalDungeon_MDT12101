@@ -3,56 +3,68 @@ using System.Collections.Generic;
 
 namespace TerminalDungeon
 {
-  public class Hero : Character
+  public abstract class Hero : Character
   {
     public int Level { get; private set; }
     public int EXP { get; private set; }
-    //public List<Item> Inventory { get; private set; }
+    public List<Item> Inventory { get; private set; }
 
-    public Hero(string name) : base(name, 100, 15)
+    public Hero(string name) : base(name, 100, 15, 40)
     {
       Level = 1;
       EXP = 0;
-      //Inventory = new List<Item>();
+      Inventory = new List<Item>();
     }
 
-    public Hero(string name, int maxHp, int atk) : base(name, maxHp, atk)
+    public Hero(string name, int maxHp, int atk, int maxMp) : base(name, maxHp, atk, maxMp)
     {
       Level = 1;
       EXP = 0;
-      //Inventory = new List<Item>();
+      Inventory = new List<Item>();
     }
 
-    public override void Attack(Character target)
+    public override string Attack(Character target)
     {
-      Console.WriteLine($"[Attack] {Name} strikes {target.Name}!");
       target.HP -= this.ATK;
-      Console.WriteLine($"{target.Name} took {this.ATK} damage (HP remaining: {target.HP}/{target.MaxHP})");
+      return $"{Name} attacks {target.Name} for {this.ATK} damage.";
     }
 
-    public virtual void UseSkill(Character target)
+    public abstract string UseSkill(Character target);
+
+    public string UseItem(int index)
     {
-      Console.WriteLine($"{Name} tries to use a basic skill, but nothing happens...");
+      if (index < 0 || index >= Inventory.Count)
+      {
+        return "Invalid item choice.";
+      }
+
+      Item item = Inventory[index];
+      string resultMessage = item.Use(this);
+      Inventory.RemoveAt(index);
+      return resultMessage;
     }
 
-    public void GainEXP(int amount)
+    public string GainEXP(int amount)
     {
       EXP += amount;
-      Console.WriteLine($"\n[EXP] {Name} gained {amount} EXP (Total: {EXP}/100)");
+      string msg = $"{Name} gained {amount} EXP.";
       if (EXP >= 100)
       {
-        LevelUp();
+        msg += " " + LevelUp();
       }
+      return msg;
     }
 
-    private void LevelUp()
+    private string LevelUp()
     {
       Level++;
       EXP -= 100;
       MaxHP += 20;
       HP = MaxHP;
       ATK += 5;
-      Console.WriteLine($"Level Up! {Name} reached Level {Level}! (MaxHP +20, ATK +5, HP restored!)");
+      MaxMP += 10;
+      MP = MaxMP;
+      return $"{Name} leveled up to Level {Level}! Stats fully restored.";
     }
   }
 }
