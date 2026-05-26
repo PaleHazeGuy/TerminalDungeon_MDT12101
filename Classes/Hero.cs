@@ -9,13 +9,6 @@ namespace TerminalDungeon
     public int EXP { get; private set; }
     public List<Item> Inventory { get; private set; }
 
-    public Hero(string name) : base(name, 100, 15, 40)
-    {
-      Level = 1;
-      EXP = 0;
-      Inventory = new List<Item>();
-    }
-
     public Hero(string name, int maxHp, int atk, int maxMp) : base(name, maxHp, atk, maxMp)
     {
       Level = 1;

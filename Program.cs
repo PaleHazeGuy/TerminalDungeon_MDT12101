@@ -2,25 +2,6 @@ using System;
 
 namespace TerminalDungeon
 {
-  public class Warrior : Hero
-  {
-    public Warrior(string name) : base(name, 120, 15, 40)
-    {
-    }
-
-    public override string UseSkill(Character target)
-    {
-      if (MP >= 15)
-      {
-        MP -= 15;
-        int damage = ATK * 2;
-        target.HP -= damage;
-        return $"{Name} unleashes a Shield Slam! Dealt {damage} skill damage.";
-      }
-      return $"{Name} tried to use Shield Slam, but didn't have enough MP!";
-    }
-  }
-
   public class Enemy : Character
   {
     private readonly Random _rng = new Random();
@@ -83,14 +64,16 @@ namespace TerminalDungeon
 
   class Program
   {
-    static void RenderUI(Warrior player, Enemy enemy, string combatLog)
+    static void RenderUI(Hero player, Enemy enemy, string combatLog)
     {
       Console.Clear();
       Console.WriteLine("========================================");
       Console.WriteLine("            TERMINAL DUNGEON            ");
       Console.WriteLine("========================================");
-      Console.WriteLine($"[PLAYER] {player.Name} (Lv.{player.Level}) - HP: {player.HP}/{player.MaxHP} | MP: {player.MP}/{player.MaxMP}");
-      Console.WriteLine($"[ENEMY]  {enemy.Name} - HP: {enemy.HP}/{enemy.MaxHP} | MP: {enemy.MP}/{enemy.MaxMP}");
+      Console.WriteLine($"[PLAYER] {player.Name} ({player.GetType().Name} Lv.{player.Level})");
+      Console.WriteLine($"         HP: {player.HP}/{player.MaxHP} | MP: {player.MP}/{player.MaxMP}");
+      Console.WriteLine($"[ENEMY]  {enemy.Name}");
+      Console.WriteLine($"         HP: {enemy.HP}/{enemy.MaxHP} | MP: {enemy.MP}/{enemy.MaxMP}");
       Console.WriteLine("----------------------------------------");
       Console.WriteLine($"[LAST TURN]: {combatLog}");
       Console.WriteLine("----------------------------------------");
@@ -98,8 +81,52 @@ namespace TerminalDungeon
 
     static void Main(string[] args)
     {
-      Warrior player = new Warrior("Player_Alpha");
-      Enemy enemy = new Enemy("Dungeon Guardian", 100, 20, 30, 120);
+      Console.Clear();
+      Console.WriteLine("========================================");
+      Console.WriteLine("      WELCOME TO TERMINAL DUNGEON       ");
+      Console.WriteLine("========================================");
+
+      string name = "";
+      while (string.IsNullOrWhiteSpace(name))
+      {
+        Console.Write("Enter your Hero's name: ");
+        name = Console.ReadLine();
+      }
+
+      Hero player = null;
+      while (player == null)
+      {
+        Console.Clear();
+        Console.WriteLine("========================================");
+        Console.WriteLine($"  Choose a Character Class for {name}   ");
+        Console.WriteLine("========================================");
+        Console.WriteLine("1. Warrior - High HP, Solid physical skills.");
+        Console.WriteLine("2. Mage    - Low HP, Massive mana pools and spells.");
+        Console.WriteLine("3. Rogue   - Balanced stats, high crit potential.");
+        Console.WriteLine("----------------------------------------");
+        Console.Write("Select Class (1-3): ");
+
+        string classChoice = Console.ReadLine();
+        if (classChoice == "1")
+        {
+          player = new Warrior(name);
+        }
+        else if (classChoice == "2")
+        {
+          player = new Mage(name);
+        }
+        else if (classChoice == "3")
+        {
+          player = new Rogue(name);
+        }
+        else
+        {
+          Console.WriteLine("\nInvalid selection! Press any key to try again...");
+          Console.ReadKey(true);
+        }
+      }
+
+      Enemy enemy = new Enemy("Dungeon Guardian", 110, 18, 30, 120);
 
       player.Inventory.Add(new Potion("Health Potion", "Restores 50 HP.", 50, 0));
       player.Inventory.Add(new Potion("Mana Potion", "Restores 25 MP.", 0, 25));
@@ -118,7 +145,7 @@ namespace TerminalDungeon
         {
           Console.WriteLine("\nChoose your action:");
           Console.WriteLine("1. Attack");
-          Console.WriteLine("2. Use Skill (Costs 15 MP)");
+          Console.WriteLine("2. Use Skill");
           Console.WriteLine("3. Block (Reduce damage & Regen 5 MP)");
           Console.WriteLine("4. Open Inventory");
           Console.Write("> ");
@@ -132,14 +159,14 @@ namespace TerminalDungeon
           }
           else if (input == "2")
           {
-            if (player.MP >= 15)
+            int skillCost = player is Mage ? 20 : 15;
+            if (player.MP >= skillCost)
             {
               combatLog = player.UseSkill(enemy);
               validAction = true;
             }
             else
             {
-              // Clear and repaint after telling the player they are out of MP
               Console.WriteLine("Not enough MP! Press any key to refresh...");
               Console.ReadKey(true);
               RenderUI(player, enemy, combatLog);
