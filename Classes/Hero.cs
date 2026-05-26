@@ -7,20 +7,20 @@ namespace TerminalDungeon
   {
     public int Level { get; private set; }
     public int EXP { get; private set; }
-    public List<Item> Inventory { get; private set; }
+    //public List<Item> Inventory { get; private set; }
 
     public Hero(string name) : base(name, 100, 15)
     {
       Level = 1;
       EXP = 0;
-      Inventory = new List<Item>();
+      //Inventory = new List<Item>();
     }
 
     public Hero(string name, int maxHp, int atk) : base(name, maxHp, atk)
     {
       Level = 1;
       EXP = 0;
-      Inventory = new List<Item>();
+      //Inventory = new List<Item>();
     }
 
     public override void Attack(Character target)
