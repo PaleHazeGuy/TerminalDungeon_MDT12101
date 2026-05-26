@@ -2,66 +2,6 @@ using System;
 
 namespace TerminalDungeon
 {
-  public class Enemy : Character
-  {
-    private readonly Random _rng = new Random();
-    public int RewardEXP { get; private set; }
-
-    public Enemy(string name, int hp, int atk, int maxMp, int rewardExp) : base(name, hp, atk, maxMp)
-    {
-      RewardEXP = rewardExp;
-    }
-
-    public override string Attack(Character target)
-    {
-      target.HP -= ATK;
-      return $"{Name} strikes {target.Name} for {ATK} damage.";
-    }
-
-    public string TakeTurn(Character target, bool isTargetBlocking, out bool isEnemyBlocking)
-    {
-      isEnemyBlocking = false;
-      int choice = _rng.Next(1, 4);
-
-      if (choice == 2 && MP < 10)
-      {
-        choice = 1;
-      }
-
-      if (choice == 1)
-      {
-        int damage = ATK;
-        if (isTargetBlocking)
-        {
-          damage = (int)(ATK * 0.3);
-          target.HP -= damage;
-          return $"{Name} lunges forward, but you blocked the hit, taking only {damage} damage.";
-        }
-        target.HP -= damage;
-        return $"{Name} lunges forward with a basic attack dealing {damage} damage.";
-      }
-      else if (choice == 2)
-      {
-        MP -= 10;
-        int damage = ATK + 12;
-        if (isTargetBlocking)
-        {
-          damage = (int)(damage * 0.3);
-          target.HP -= damage;
-          return $"{Name} unleashes a Dark Blast! You mitigated the impact, taking {damage} damage.";
-        }
-        target.HP -= damage;
-        return $"{Name} unleashes a powerful Dark Blast for {damage} damage!";
-      }
-      else
-      {
-        isEnemyBlocking = true;
-        MP += 10;
-        return $"{Name} takes a defensive stance and channels energy (+10 Enemy MP).";
-      }
-    }
-  }
-
   class Program
   {
     static void RenderUI(Hero player, Enemy enemy, string combatLog)
@@ -107,18 +47,9 @@ namespace TerminalDungeon
         Console.Write("Select Class (1-3): ");
 
         string classChoice = Console.ReadLine();
-        if (classChoice == "1")
-        {
-          player = new Warrior(name);
-        }
-        else if (classChoice == "2")
-        {
-          player = new Mage(name);
-        }
-        else if (classChoice == "3")
-        {
-          player = new Rogue(name);
-        }
+        if (classChoice == "1") player = new Warrior(name);
+        else if (classChoice == "2") player = new Mage(name);
+        else if (classChoice == "3") player = new Rogue(name);
         else
         {
           Console.WriteLine("\nInvalid selection! Press any key to try again...");
@@ -126,7 +57,8 @@ namespace TerminalDungeon
         }
       }
 
-      Enemy enemy = new Enemy("Dungeon Guardian", 110, 18, 30, 120);
+      // Instantiating our newly extracted subclass enemy cleanly!
+      Enemy enemy = new DungeonGuardian();
 
       player.Inventory.Add(new Potion("Health Potion", "Restores 50 HP.", 50, 0));
       player.Inventory.Add(new Potion("Mana Potion", "Restores 25 MP.", 0, 25));
